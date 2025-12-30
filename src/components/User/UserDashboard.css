@@ -1,0 +1,13 @@
+/* UserDashboard styles */
+
+.user-dashboard {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.dashboard-container {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+/* Additional styles if needed */
