@@ -9,7 +9,6 @@ const Signup = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
@@ -27,13 +26,13 @@ const Signup = () => {
             const user = userCredential.user;
 
             // Save user data to database
-            await set(ref(db, 'users/' + user.uid), {
+            await set(ref(db, '<Engine_Health />users/' + user.uid), {
                 email: user.email,
                 uid: user.uid,
                 createdAt: new Date().toISOString()
             });
 
-            navigate('/login');
+            navigate('<Engine_Health />users/');
         } catch (err) {
             setError(err.message);
         }
@@ -122,45 +121,22 @@ const Signup = () => {
 
                     <div style={{ marginBottom: 32 }}>
                         <label style={{ display: 'block', marginBottom: 10, fontWeight: 600, color: '#475569', fontSize: window.innerWidth < 768 ? '0.75rem' : '0.875rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Confirm Password</label>
-                        <div style={{ position: 'relative' }}>
-                            <input
-                                type={showConfirmPassword ? 'text' : 'password'}
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="Confirm your password"
-                                style={{ width: '100%', padding: window.innerWidth < 768 ? '12px 14px' : '14px 16px', paddingRight: '50px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: window.innerWidth < 768 ? '0.875rem' : '1rem', outline: 'none', boxSizing: 'border-box', background: '#fff', color: '#0f172a', transition: 'all 0.3s' }}
-                                onFocus={(e) => {
-                                    e.target.style.border = '1px solid #3b82f6';
-                                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                                }}
-                                onBlur={(e) => {
-                                    e.target.style.border = '1px solid #e2e8f0';
-                                    e.target.style.boxShadow = 'none';
-                                }}
-                                required
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: '#64748b', transition: 'color 0.2s' }}
-                                onMouseEnter={(e) => e.currentTarget.style.color = '#3b82f6'}
-                                onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
-                            >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    {showConfirmPassword ? (
-                                        <>
-                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                            <circle cx="12" cy="12" r="3" />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                                            <line x1="1" y1="1" x2="23" y2="23" />
-                                        </>
-                                    )}
-                                </svg>
-                            </button>
-                        </div>
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Confirm your password"
+                            style={{ width: '100%', padding: window.innerWidth < 768 ? '12px 14px' : '14px 16px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: window.innerWidth < 768 ? '0.875rem' : '1rem', outline: 'none', boxSizing: 'border-box', background: '#fff', color: '#0f172a', transition: 'all 0.3s' }}
+                            onFocus={(e) => {
+                                e.target.style.border = '1px solid #3b82f6';
+                                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.border = '1px solid #e2e8f0';
+                                e.target.style.boxShadow = 'none';
+                            }}
+                            required
+                        />
                     </div>
 
                     <button
