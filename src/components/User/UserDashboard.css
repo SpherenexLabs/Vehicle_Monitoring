@@ -10,4 +10,17 @@
     margin: 0 auto;
 }
 
+/* Pulse animation for alert button */
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.85;
+    }
+}
+
 /* Additional styles if needed */

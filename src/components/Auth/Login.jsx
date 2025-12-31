@@ -40,23 +40,25 @@ const Login = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-            <div style={{ background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(20px)', borderRadius: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', padding: '48px', width: '100%', maxWidth: 450, border: '1px solid rgba(255,255,255,0.3)' }}>
-                <h2 style={{ fontSize: '2.2rem', fontWeight: 700, color: '#1a2a36', marginBottom: '1rem', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-                    🚗 <span style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Login</span>
-                </h2>
-                <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '0.95rem', marginBottom: '2rem' }}>Welcome back! Please login to continue</p>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '1rem' }}>
+            <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 20px 60px rgba(0,0,0,0.4)', padding: 'clamp(24px, 5vw, 48px)', width: '100%', maxWidth: 450, border: '1px solid #e2e8f0' }}>
+                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                    <h2 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
+                        VehicleTrack
+                    </h2>
+                    <p style={{ color: '#64748b', fontSize: 'clamp(0.875rem, 2vw, 0.95rem)' }}>Welcome back! Please login to continue</p>
+                </div>
 
                 {error && (
-                    <div style={{ background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)', color: '#dc2626', padding: '14px 16px', borderRadius: 12, marginBottom: 24, fontSize: '0.9rem', border: '1px solid #fca5a5', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span>⚠️</span>
+                    <div style={{ background: '#fef2f2', color: '#991b1b', padding: '14px 16px', borderRadius: 12, marginBottom: 24, fontSize: '0.9rem', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#ef4444', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>!</div>
                         <span>{error}</span>
                     </div>
                 )}
 
                 <form onSubmit={handleLogin}>
                     <div style={{ marginBottom: 24 }}>
-                        <label style={{ display: 'block', marginBottom: 10, fontWeight: 600, color: '#374151', fontSize: '0.95rem' }}>📧 Email</label>
+                        <label style={{ display: 'block', marginBottom: 10, fontWeight: 600, color: '#475569', fontSize: window.innerWidth < 768 ? '0.75rem' : '0.875rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email Address</label>
                         <input
                             type="email"
                             value={email}
@@ -64,31 +66,30 @@ const Login = () => {
                             placeholder="Enter your email"
                             style={{
                                 width: '100%',
-                                padding: '14px 16px',
-                                border: '2px solid #e5e7eb',
-                                borderRadius: 12,
-                                fontSize: '1rem',
+                                padding: window.innerWidth < 768 ? '12px 14px' : '14px 16px',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: 10,
+                                fontSize: window.innerWidth < 768 ? '0.875rem' : '1rem',
                                 outline: 'none',
                                 transition: 'all 0.3s',
-                                background: '#f9fafb',
-                                boxSizing: 'border-box'
+                                background: '#fff',
+                                boxSizing: 'border-box',
+                                color: '#0f172a'
                             }}
                             onFocus={(e) => {
-                                e.target.style.border = '2px solid #667eea';
-                                e.target.style.background = '#fff';
-                                e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+                                e.target.style.border = '1px solid #3b82f6';
+                                e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                             }}
                             onBlur={(e) => {
-                                e.target.style.border = '2px solid #e5e7eb';
-                                e.target.style.background = '#f9fafb';
+                                e.target.style.border = '1px solid #e2e8f0';
                                 e.target.style.boxShadow = 'none';
                             }}
                             required
                         />
                     </div>
 
-                    <div style={{ marginBottom: 24 }}>
-                        <label style={{ display: 'block', marginBottom: 10, fontWeight: 600, color: '#374151', fontSize: '0.95rem' }}>🔒 Password</label>
+                    <div style={{ marginBottom: 32 }}>
+                        <label style={{ display: 'block', marginBottom: 10, fontWeight: 600, color: '#475569', fontSize: window.innerWidth < 768 ? '0.75rem' : '0.875rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Password</label>
                         <div style={{ position: 'relative', width: '100%' }}>
                             <input
                                 type={showPassword ? 'text' : 'password'}
@@ -97,24 +98,23 @@ const Login = () => {
                                 placeholder="Enter your password"
                                 style={{
                                     width: '100%',
-                                    padding: '14px 16px',
+                                    padding: window.innerWidth < 768 ? '12px 14px' : '14px 16px',
                                     paddingRight: '50px',
-                                    border: '2px solid #e5e7eb',
-                                    borderRadius: 12,
-                                    fontSize: '1rem',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: 10,
+                                    fontSize: window.innerWidth < 768 ? '0.875rem' : '1rem',
                                     outline: 'none',
                                     transition: 'all 0.3s',
-                                    background: '#f9fafb',
-                                    boxSizing: 'border-box'
+                                    background: '#fff',
+                                    boxSizing: 'border-box',
+                                    color: '#0f172a'
                                 }}
                                 onFocus={(e) => {
-                                    e.target.style.border = '2px solid #667eea';
-                                    e.target.style.background = '#fff';
-                                    e.target.style.boxShadow = '0 0 0 4px rgba(102, 126, 234, 0.1)';
+                                    e.target.style.border = '1px solid #3b82f6';
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
                                 }}
                                 onBlur={(e) => {
-                                    e.target.style.border = '2px solid #e5e7eb';
-                                    e.target.style.background = '#f9fafb';
+                                    e.target.style.border = '1px solid #e2e8f0';
                                     e.target.style.boxShadow = 'none';
                                 }}
                                 required
@@ -130,16 +130,28 @@ const Login = () => {
                                     background: 'none',
                                     border: 'none',
                                     cursor: 'pointer',
-                                    fontSize: '1.3rem',
                                     padding: '4px',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    transition: 'all 0.2s'
+                                    color: '#64748b',
+                                    transition: 'color 0.2s'
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-                                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                                onMouseEnter={(e) => e.currentTarget.style.color = '#3b82f6'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
                             >
-                                {showPassword ? '👁️' : '👁️‍🗨️'}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    {showPassword ? (
+                                        <>
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                            <line x1="1" y1="1" x2="23" y2="23" />
+                                        </>
+                                    )}
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -148,53 +160,50 @@ const Login = () => {
                         type="submit"
                         style={{
                             width: '100%',
-                            padding: '14px',
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            padding: window.innerWidth < 768 ? '12px' : '14px',
+                            background: '#3b82f6',
                             color: '#fff',
                             border: 'none',
-                            borderRadius: 12,
-                            fontSize: '1.05rem',
+                            borderRadius: 10,
+                            fontSize: window.innerWidth < 768 ? '0.875rem' : '1rem',
                             fontWeight: 600,
                             cursor: 'pointer',
-                            marginBottom: 20,
-                            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
                             transition: 'all 0.3s'
                         }}
                         onMouseEnter={(e) => {
+                            e.target.style.background = '#2563eb';
                             e.target.style.transform = 'translateY(-2px)';
-                            e.target.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
+                            e.target.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
                         }}
                         onMouseLeave={(e) => {
+                            e.target.style.background = '#3b82f6';
                             e.target.style.transform = 'translateY(0)';
-                            e.target.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
                         }}
                     >
                         Login
                     </button>
                 </form>
 
-                <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 20, borderTop: '1px solid #e5e7eb' }}>
-                    <p style={{ color: '#6b7280', fontSize: '0.95rem', margin: 0 }}>
+                <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
+                    <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>
                         Don't have an account?{' '}
                         <button
                             type="button"
-                            onClick={() => {
-                                console.log('Navigating to signup page...');
-                                navigate('/signup');
-                            }}
+                            onClick={() => navigate('/signup')}
                             style={{
                                 background: 'none',
                                 border: 'none',
-                                color: '#667eea',
+                                color: '#3b82f6',
                                 cursor: 'pointer',
                                 fontWeight: 600,
-                                textDecoration: 'underline',
-                                transition: 'all 0.2s',
-                                fontSize: '0.95rem',
+                                transition: 'color 0.2s',
+                                fontSize: '0.875rem',
                                 padding: 0
                             }}
-                            onMouseEnter={(e) => e.target.style.color = '#764ba2'}
-                            onMouseLeave={(e) => e.target.style.color = '#667eea'}
+                            onMouseEnter={(e) => e.target.style.color = '#2563eb'}
+                            onMouseLeave={(e) => e.target.style.color = '#3b82f6'}
                         >
                             Sign Up
                         </button>

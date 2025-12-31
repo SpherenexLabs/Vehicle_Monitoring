@@ -31,7 +31,7 @@ const ServiceCheck = () => {
                 if (data.Oil < 30) {
                     services.push({
                         id: 1,
-                        title: '🛢️ Engine Oil Change',
+                        title: ' Engine Oil Change',
                         status: data.Oil < 15 ? 'URGENT' : 'REQUIRED',
                         condition: `Oil Level: ${data.Oil}%`,
                         suggestion: 'Schedule an engine oil change immediately. Low oil can cause engine damage.',
@@ -41,7 +41,7 @@ const ServiceCheck = () => {
                 } else if (data.Oil < 50) {
                     services.push({
                         id: 1,
-                        title: '🛢️ Engine Oil Check',
+                        title: ' Engine Oil Check',
                         status: 'RECOMMENDED',
                         condition: `Oil Level: ${data.Oil}%`,
                         suggestion: 'Consider scheduling an oil change within next 1000-2000 km.',
@@ -55,7 +55,7 @@ const ServiceCheck = () => {
                 if (highVibCount > 10) {
                     services.push({
                         id: 2,
-                        title: '⚙️ Engine Mount Inspection',
+                        title: 'Engine Mount Inspection',
                         status: 'REQUIRED',
                         condition: 'High vibration detected for extended period',
                         suggestion: 'Check engine mounts, suspension, and wheel alignment. Prolonged vibration can damage components.',
@@ -65,7 +65,7 @@ const ServiceCheck = () => {
                 } else if (highVibCount > 5) {
                     services.push({
                         id: 2,
-                        title: '⚙️ Vibration Check',
+                        title: ' Vibration Check',
                         status: 'RECOMMENDED',
                         condition: 'Moderate vibration levels detected',
                         suggestion: 'Inspect tire balance and pressure. Check suspension system.',
@@ -78,7 +78,7 @@ const ServiceCheck = () => {
                 if (data.Volt < 12) {
                     services.push({
                         id: 3,
-                        title: '🔋 Battery Replacement',
+                        title: ' Battery Replacement',
                         status: 'URGENT',
                         condition: `Voltage: ${data.Volt}V (Critical)`,
                         suggestion: 'Battery voltage critically low. Replace battery immediately to avoid starting issues.',
@@ -88,7 +88,7 @@ const ServiceCheck = () => {
                 } else if (data.Volt < 12.4) {
                     services.push({
                         id: 3,
-                        title: '🔋 Battery Check',
+                        title: ' Battery Check',
                         status: 'SOON',
                         condition: `Voltage: ${data.Volt}V (Low)`,
                         suggestion: 'Battery health declining. Check battery terminals, charging system, and consider replacement.',
@@ -101,7 +101,7 @@ const ServiceCheck = () => {
                 if (data.Fuel < 20) {
                     services.push({
                         id: 4,
-                        title: '⛽ Fuel System Check',
+                        title: ' Fuel System Check',
                         status: 'REQUIRED',
                         condition: `Fuel Level: ${data.Fuel}% (Low)`,
                         suggestion: 'Refuel immediately. Consider checking fuel system efficiency.',
@@ -114,7 +114,7 @@ const ServiceCheck = () => {
                 if (data.Temp > 90) {
                     services.push({
                         id: 5,
-                        title: '🌡️ Cooling System Service',
+                        title: ' Cooling System Service',
                         status: 'URGENT',
                         condition: `Temperature: ${data.Temp}°C (High)`,
                         suggestion: 'Engine overheating! Check coolant level, radiator, and water pump immediately.',
@@ -124,7 +124,7 @@ const ServiceCheck = () => {
                 } else if (data.Temp > 80) {
                     services.push({
                         id: 5,
-                        title: '🌡️ Cooling System Check',
+                        title: ' Cooling System Check',
                         status: 'RECOMMENDED',
                         condition: `Temperature: ${data.Temp}°C (Warm)`,
                         suggestion: 'Monitor engine temperature. Check coolant level and thermostat.',
@@ -146,7 +146,7 @@ const ServiceCheck = () => {
                     });
                     services.push({
                         id: 7,
-                        title: '🔧 Routine Maintenance',
+                        title: ' Routine Maintenance',
                         status: 'SCHEDULED',
                         condition: 'Preventive maintenance',
                         suggestion: 'Schedule regular service: Check all fluids, filters, brakes, and tire pressure.',
@@ -197,12 +197,12 @@ const ServiceCheck = () => {
     return (
         <div style={{ marginTop: 32 }}>
             <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#1a2a36', marginBottom: 24 }}>
-                🛠️ Service Check
+                 Service Check
             </h2>
 
             <div style={cardStyle}>
                 <h3 style={headerStyle}>
-                    🔍 Service Status
+                     Service Status
                 </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -247,7 +247,7 @@ const ServiceCheck = () => {
                                 color: '#374151',
                                 lineHeight: 1.6
                             }}>
-                                <strong>💡 Suggestion:</strong> {item.suggestion}
+                                <strong> Suggestion:</strong> {item.suggestion}
                             </div>
                         </div>
                     ))}

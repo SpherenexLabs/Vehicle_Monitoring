@@ -108,7 +108,7 @@ const Monitoring = ({ vehicleDetails }) => {
             {/* Temperature */}
             <div style={cardStyle}>
                 <h3 style={headerStyle}>
-                    <span>🌡️ Temperature</span>
+                    <span>Temperature</span>
                 </h3>
                 <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={data}>
@@ -142,7 +142,7 @@ const Monitoring = ({ vehicleDetails }) => {
             {/* Fuel Level */}
             <div style={cardStyle}>
                 <h3 style={headerStyle}>
-                    <span>⛽ Fuel Level</span>
+                    <span> Fuel Level</span>
                 </h3>
                 <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={data}>
