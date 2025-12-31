@@ -35,7 +35,20 @@ const Login = () => {
 
             navigate('/user');
         } catch (err) {
-            setError('Invalid credentials. Please try again.');
+            console.error('Login error:', err.code, err.message);
+            
+            // Provide specific error messages
+            if (err.code === 'auth/user-not-found') {
+                setError('No account found with this email. Please sign up first.');
+            } else if (err.code === 'auth/wrong-password') {
+                setError('Incorrect password. Please try again.');
+            } else if (err.code === 'auth/invalid-email') {
+                setError('Invalid email format. Please check your email.');
+            } else if (err.code === 'auth/invalid-credential') {
+                setError('Invalid credentials. Please check your email and password.');
+            } else {
+                setError('Login failed. Please try again or sign up if you don\'t have an account.');
+            }
         }
     };
 
