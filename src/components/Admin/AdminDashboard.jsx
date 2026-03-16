@@ -10,6 +10,41 @@ const AdminDashboard = () => {
     const [allUsers, setAllUsers] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [engineHealth, setEngineHealth] = useState(null);
+    const [conditionSummary, setConditionSummary] = useState({ status: 'Unknown', message: 'Waiting for live data' });
+
+    const evaluateCondition = (data) => {
+        if (!data) return { status: 'Unknown', message: 'Waiting for live data' };
+
+        const vibAxes = data.MPU ? [data.MPU.X || 0, data.MPU.Y || 0, data.MPU.Z || 0] : [0, 0, 0];
+        const maxVibration = Math.max(...vibAxes.map((v) => Math.abs(v)));
+        const hasNegativeVibration = data.MPU ? vibAxes.some((v) => v < 0) : false;
+
+        const reasons = [];
+        if (data.Temp > 90) reasons.push('High temperature');
+        if (data.Oil < 20) reasons.push('Low oil');
+        if (data.Fuel < 20) reasons.push('Low fuel');
+        if (data.Volt < 12) reasons.push('Low voltage');
+        if (maxVibration > 70) reasons.push('Severe vibration');
+        if (hasNegativeVibration) reasons.push('Negative vibration axis');
+
+        if (reasons.length) {
+            return { status: 'Critical', message: reasons.join(' • ') };
+        }
+
+        const warningReasons = [];
+        if (data.Temp > 80) warningReasons.push('Warm engine');
+        if (data.Oil < 40) warningReasons.push('Low oil');
+        if (data.Fuel < 40) warningReasons.push('Low fuel');
+        if (data.Volt < 12.4) warningReasons.push('Low voltage');
+        if (maxVibration > 40) warningReasons.push('High vibration');
+
+        if (warningReasons.length) {
+            return { status: 'Warning', message: warningReasons.join(' • ') };
+        }
+
+        return { status: 'Healthy', message: 'All systems within range' };
+    };
 
     useEffect(() => {
         // Fetch all users and their vehicle details
@@ -29,6 +64,16 @@ const AdminDashboard = () => {
             }
         });
 
+        return () => unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        const engineHealthRef = ref(db, 'Engine_Health');
+        const unsubscribe = onValue(engineHealthRef, (snapshot) => {
+            const data = snapshot.val();
+            setEngineHealth(data);
+            setConditionSummary(evaluateCondition(data));
+        });
         return () => unsubscribe();
     }, []);
 
@@ -245,6 +290,31 @@ const AdminDashboard = () => {
                             User & Vehicle Details
                         </h3>
                         <div style={{ width: '90px' }}></div>
+                    </div>
+
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '20px',
+                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                        padding: '16px',
+                        borderRadius: 12,
+                        border: '1px solid #bae6fd'
+                    }}>
+                        <div style={{
+                            padding: '6px 12px',
+                            borderRadius: 10,
+                            fontWeight: 700,
+                            color: conditionSummary.status === 'Critical' ? '#991b1b' : conditionSummary.status === 'Warning' ? '#92400e' : '#065f46',
+                            background: conditionSummary.status === 'Critical' ? '#fee2e2' : conditionSummary.status === 'Warning' ? '#fef3c7' : '#dcfce7',
+                            border: `1px solid ${conditionSummary.status === 'Critical' ? '#fecdd3' : conditionSummary.status === 'Warning' ? '#fde68a' : '#bbf7d0'}`
+                        }}>
+                            {conditionSummary.status}
+                        </div>
+                        <div style={{ color: '#0f172a', fontWeight: 600 }}>
+                            {conditionSummary.message}
+                        </div>
                     </div>
 
                     {/* User Information */}
@@ -597,6 +667,26 @@ const AdminDashboard = () => {
                                     marginBottom: '4px'
                                 }}>
                                     <span style={{ fontWeight: 600 }}>Phone:</span> {user.vehicleDetails?.phoneNumber || 'N/A'}
+                                </div>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    marginTop: 8
+                                }}>
+                                    <span style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 600 }}>Condition:</span>
+                                    <span style={{
+                                        padding: '6px 10px',
+                                        borderRadius: 10,
+                                        fontWeight: 700,
+                                        color: conditionSummary.status === 'Critical' ? '#991b1b' : conditionSummary.status === 'Warning' ? '#92400e' : '#065f46',
+                                        background: conditionSummary.status === 'Critical' ? '#fee2e2' : conditionSummary.status === 'Warning' ? '#fef3c7' : '#dcfce7'
+                                    }}>
+                                        {conditionSummary.status}
+                                    </span>
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: 6 }}>
+                                    {conditionSummary.message}
                                 </div>
                             </div>
                         ))}

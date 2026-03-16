@@ -29,6 +29,7 @@ const UserDashboard = () => {
     const [selectedService, setSelectedService] = useState(null);
     const [scheduleForm, setScheduleForm] = useState({ date: '', time: '', notes: '' });
     const [userLocation, setUserLocation] = useState(null);
+    const [vibrationStatus, setVibrationStatus] = useState({ level: 'Normal', message: 'Vibration within safe limits' });
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
     useEffect(() => {
@@ -75,6 +76,21 @@ const UserDashboard = () => {
                 });
 
                 // Generate alerts and suggestions
+                const vibAxes = data.MPU ? [data.MPU.X || 0, data.MPU.Y || 0, data.MPU.Z || 0] : [0, 0, 0];
+                const maxAbsVibration = Math.max(...vibAxes.map((v) => Math.abs(v)));
+                const hasNegativeVibration = data.MPU ? vibAxes.some((v) => v < 0) : false;
+
+                const vibStatus = maxAbsVibration > 70 ? 'Critical' : maxAbsVibration > 40 ? 'Warning' : 'Normal';
+                let vibMessage = vibStatus === 'Critical'
+                    ? 'Severe vibration detected - stop and inspect mounts and wheels'
+                    : vibStatus === 'Warning'
+                        ? 'Elevated vibration - check wheel balance and suspension soon'
+                        : 'Vibration within safe range';
+                if (hasNegativeVibration) {
+                    vibMessage = 'Negative vibration reading detected - verify sensor orientation and mounts';
+                }
+                setVibrationStatus({ level: vibStatus, message: vibMessage });
+
                 const newAlerts = [];
                 const newSuggestions = [];
 
@@ -118,14 +134,14 @@ const UserDashboard = () => {
                     newAlerts.push(`Warning: Battery at ${data.Battery.toFixed(1)}%`);
                 }
 
-                // Vibration alerts
-                if (data.MPU) {
-                    const vibX = Math.abs(data.MPU.X || 0);
-                    const vibY = Math.abs(data.MPU.Y || 0);
-                    const vibZ = Math.abs(data.MPU.Z || 0);
-                    if (vibX > 50 || vibY > 50 || vibZ > 50) {
-                        newAlerts.push(`High Vibration Detected - Check Vehicle Balance!`);
-                    }
+                // Vibration alerts (include negative values)
+                if (vibStatus === 'Critical') {
+                    newAlerts.push('Critical: Severe vibration detected - stop and inspect immediately');
+                } else if (vibStatus === 'Warning') {
+                    newAlerts.push('Warning: High vibration detected - service recommended soon');
+                }
+                if (hasNegativeVibration) {
+                    newAlerts.push('Alert: Negative vibration axis detected - check sensor orientation/mounting');
                 }
 
                 setAlerts(newAlerts);
@@ -722,6 +738,71 @@ You will receive a confirmation email shortly.
                                 </div>
                             )}
 
+                            {/* Nearby service stations & petrol bunks */}
+                            <div style={{
+                                background: '#fff',
+                                borderRadius: 16,
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                                padding: window.innerWidth < 400 ? '12px' : '20px',
+                                border: '1px solid #e2e8f0',
+                                marginBottom: window.innerWidth < 400 ? '12px' : '20px'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                                    <div>
+                                        <h3 style={{ fontSize: window.innerWidth < 400 ? '0.95rem' : '1.25rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Nearby Service & Fuel</h3>
+                                        <p style={{ color: '#64748b', fontSize: window.innerWidth < 400 ? '0.7rem' : '0.9rem', margin: '4px 0 0 0' }}>
+                                            Quick links to locate service stations and petrol bunks around you.
+                                        </p>
+                                    </div>
+                                    {userLocation && (
+                                        <span style={{ background: '#ecfeff', color: '#0891b2', padding: '8px 12px', borderRadius: 10, fontSize: window.innerWidth < 400 ? '0.7rem' : '0.85rem', fontWeight: 700 }}>
+                                            {userLocation.lat.toFixed(3)}, {userLocation.lng.toFixed(3)}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div style={{ display: 'flex', gap: window.innerWidth < 480 ? 8 : 12, marginTop: window.innerWidth < 480 ? 10 : 14, flexWrap: 'wrap' }}>
+                                    <a
+                                        href={userLocation ? `https://www.google.com/maps/search/car+service+station/@${userLocation.lat},${userLocation.lng},14z` : 'https://www.google.com/maps/search/car+service+station'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            flex: 1,
+                                            minWidth: 180,
+                                            textAlign: 'center',
+                                            background: 'linear-gradient(135deg, #0ea5e9, #06b6d4)',
+                                            color: '#fff',
+                                            padding: window.innerWidth < 400 ? '10px' : '12px 16px',
+                                            borderRadius: 12,
+                                            textDecoration: 'none',
+                                            fontWeight: 700,
+                                            boxShadow: '0 8px 20px rgba(14,165,233,0.25)'
+                                        }}
+                                    >
+                                        Find Service Stations ↗
+                                    </a>
+                                    <a
+                                        href={userLocation ? `https://www.google.com/maps/search/petrol+station/@${userLocation.lat},${userLocation.lng},14z` : 'https://www.google.com/maps/search/petrol+station'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            flex: 1,
+                                            minWidth: 180,
+                                            textAlign: 'center',
+                                            background: 'linear-gradient(135deg, #f97316, #fb923c)',
+                                            color: '#fff',
+                                            padding: window.innerWidth < 400 ? '10px' : '12px 16px',
+                                            borderRadius: 12,
+                                            textDecoration: 'none',
+                                            fontWeight: 700,
+                                            boxShadow: '0 8px 20px rgba(249,115,22,0.25)'
+                                        }}
+                                    >
+                                        Find Petrol Bunks ↗
+                                    </a>
+                                </div>
+                            </div>
+
                             {/* Vehicle Details Section */}
                             <div style={{
                                 background: '#fff',
@@ -1045,6 +1126,65 @@ You will receive a confirmation email shortly.
                                         <div style={{ fontSize: window.innerWidth < 400 ? '1rem' : window.innerWidth < 768 ? '1.5rem' : '1.8rem', fontWeight: 700, color: stat.color }}>{stat.value}</div>
                                     </div>
                                 ))}
+                            </div>
+
+                            {/* Vibration condition summary */}
+                            <div style={{
+                                background: '#fff',
+                                borderRadius: 16,
+                                padding: window.innerWidth < 400 ? '12px' : '20px',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                                border: '1px solid #e2e8f0',
+                                marginBottom: window.innerWidth < 768 ? '16px' : '24px'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                                    <h3 style={{ fontSize: window.innerWidth < 400 ? '1rem' : '1.25rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                                        Vibration Condition
+                                    </h3>
+                                    <span style={{
+                                        padding: '8px 12px',
+                                        borderRadius: 10,
+                                        fontWeight: 700,
+                                        fontSize: window.innerWidth < 400 ? '0.75rem' : '0.9rem',
+                                        color: vibrationStatus.level === 'Critical' ? '#991b1b' : vibrationStatus.level === 'Warning' ? '#92400e' : '#065f46',
+                                        background: vibrationStatus.level === 'Critical' ? '#fee2e2' : vibrationStatus.level === 'Warning' ? '#fef3c7' : '#dcfce7',
+                                        border: `1px solid ${vibrationStatus.level === 'Critical' ? '#fecdd3' : vibrationStatus.level === 'Warning' ? '#fde68a' : '#bbf7d0'}`
+                                    }}>
+                                        {vibrationStatus.level}
+                                    </span>
+                                </div>
+                                <p style={{ color: '#475569', fontSize: window.innerWidth < 400 ? '0.75rem' : '0.95rem', marginTop: 8, marginBottom: 12 }}>
+                                    {vibrationStatus.message}
+                                </p>
+                                <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 768 ? 'repeat(3, 1fr)' : 'repeat(6, minmax(100px, 1fr))', gap: 12 }}>
+                                    {['X', 'Y', 'Z'].map((axis) => {
+                                        const value = engineHealth?.MPU ? (engineHealth.MPU[axis] || 0) : 0;
+                                        const isNegative = value < 0;
+                                        const isHigh = Math.abs(value) > 40;
+                                        return (
+                                            <div key={axis} style={{
+                                                background: '#f8fafc',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: 10,
+                                                padding: '10px 12px'
+                                            }}>
+                                                <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Axis {axis}</div>
+                                                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>{value.toFixed ? value.toFixed(2) : value}</div>
+                                                <div style={{
+                                                    marginTop: 6,
+                                                    padding: '4px 8px',
+                                                    borderRadius: 8,
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    color: isNegative ? '#991b1b' : isHigh ? '#92400e' : '#065f46',
+                                                    background: isNegative ? '#fee2e2' : isHigh ? '#fef3c7' : '#dcfce7'
+                                                }}>
+                                                    {isNegative ? 'Negative' : isHigh ? 'High' : 'Normal'}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
 
                             {/* Stats Grid - Conditional */}
@@ -1821,6 +1961,50 @@ You will receive a confirmation email shortly.
                                 gap: window.innerWidth < 768 ? '16px' : '24px',
                                 marginBottom: window.innerWidth < 768 ? '20px' : '32px'
                             }}>
+                                {/* Vibration Chart */}
+                                <div style={{
+                                    background: '#fff',
+                                    borderRadius: 16,
+                                    padding: window.innerWidth < 768 ? '16px' : '20px',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                                    border: '1px solid #e2e8f0'
+                                }}>
+                                    <h4 style={{
+                                        fontSize: window.innerWidth < 400 ? '0.75rem' : window.innerWidth < 768 ? '0.875rem' : '0.95rem',
+                                        fontWeight: 600,
+                                        color: '#0f172a',
+                                        marginBottom: window.innerWidth < 400 ? '8px' : '12px'
+                                    }}>
+                                        Vibration (X / Y / Z)
+                                    </h4>
+                                    <ResponsiveContainer width="100%" height={window.innerWidth < 400 ? 120 : window.innerWidth < 768 ? 140 : 170}>
+                                        <LineChart data={chartData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                            <XAxis dataKey="time" hide />
+                                            <YAxis stroke="#94a3b8" style={{ fontSize: window.innerWidth < 400 ? '0.6rem' : '0.7rem' }} />
+                                            <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: window.innerWidth < 400 ? '0.65rem' : '0.75rem' }} />
+                                            <Line type="monotone" dataKey="vibrationX" stroke="#ef4444" strokeWidth={2} dot={false} name="X" />
+                                            <Line type="monotone" dataKey="vibrationY" stroke="#f97316" strokeWidth={2} dot={false} name="Y" />
+                                            <Line type="monotone" dataKey="vibrationZ" stroke="#a855f7" strokeWidth={2} dot={false} name="Z" />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                    <div style={{
+                                        marginTop: window.innerWidth < 400 ? '8px' : '12px',
+                                        padding: window.innerWidth < 400 ? '8px' : '12px',
+                                        background: vibrationStatus.level === 'Critical' ? '#fef2f2' : vibrationStatus.level === 'Warning' ? '#fef3c7' : '#f0fdf4',
+                                        borderRadius: window.innerWidth < 400 ? 6 : 8,
+                                        border: `1px solid ${vibrationStatus.level === 'Critical' ? '#fecaca' : vibrationStatus.level === 'Warning' ? '#fde68a' : '#bbf7d0'}`
+                                    }}>
+                                        <div style={{
+                                            fontSize: window.innerWidth < 400 ? '0.65rem' : '0.8rem',
+                                            color: vibrationStatus.level === 'Critical' ? '#dc2626' : vibrationStatus.level === 'Warning' ? '#d97706' : '#16a34a',
+                                            fontWeight: 700,
+                                            lineHeight: '1.4'
+                                        }}>
+                                            {vibrationStatus.message}
+                                        </div>
+                                    </div>
+                                </div>
                                 {/* Fuel Chart */}
                                 <div style={{
                                     background: '#fff',
