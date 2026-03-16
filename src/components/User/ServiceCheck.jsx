@@ -110,6 +110,31 @@ const ServiceCheck = () => {
                     });
                 }
 
+                // Rule 4b: Battery % check
+                if (data.Battery !== undefined) {
+                    if (data.Battery < 20) {
+                        services.push({
+                            id: 8,
+                            title: ' Battery Charge Critical',
+                            status: 'URGENT',
+                            condition: `Battery: ${data.Battery.toFixed(1)}% (Critical)`,
+                            suggestion: 'Battery charge critically low. Charge immediately to avoid vehicle shutdown.',
+                            priority: 1,
+                            color: '#ef4444'
+                        });
+                    } else if (data.Battery < 50) {
+                        services.push({
+                            id: 8,
+                            title: ' Battery Charge Low',
+                            status: 'RECOMMENDED',
+                            condition: `Battery: ${data.Battery.toFixed(1)}% (Low)`,
+                            suggestion: 'Battery charge is low. Plug in or run engine to recharge.',
+                            priority: 3,
+                            color: '#f59e0b'
+                        });
+                    }
+                }
+
                 // Rule 5: Temperature monitoring
                 if (data.Temp > 90) {
                     services.push({
@@ -273,6 +298,9 @@ const ServiceCheck = () => {
                         </div>
                         <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '12px', borderRadius: 10 }}>
                             <strong>Battery:</strong> Voltage &lt; 12.4V triggers battery check
+                        </div>
+                        <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '12px', borderRadius: 10 }}>
+                            <strong>Battery Charge:</strong> Charge &lt; 20% triggers urgent alert
                         </div>
                         <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '12px', borderRadius: 10 }}>
                             <strong>Temperature:</strong> Temp &gt; 90°C triggers cooling system alert

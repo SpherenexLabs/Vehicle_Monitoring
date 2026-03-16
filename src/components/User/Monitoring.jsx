@@ -17,10 +17,12 @@ const Monitoring = ({ vehicleDetails }) => {
                     vibration_y: healthData.MPU?.Y || 0,
                     vibration_z: healthData.MPU?.Z || 0,
                     temp: healthData.Temp || 0,
-                    humidity: healthData.Humidity || 0,
+                    humidity: healthData.Hum || 0,
                     fuel: healthData.Fuel || 0,
                     oil: healthData.Oil || 0,
-                    voltage: healthData.Volt || 0
+                    voltage: healthData.Volt || 0,
+                    battery: healthData.Battery || 0,
+                    water: healthData.Water || 0
                 };
                 setData((prev) => [...prev.slice(-19), newData]);
             }
@@ -190,6 +192,40 @@ const Monitoring = ({ vehicleDetails }) => {
                 </ResponsiveContainer>
             </div>
 
+            {/* Battery % */}
+            <div style={cardStyle}>
+                <h3 style={headerStyle}>
+                    <span>🔋 Battery Charge</span>
+                </h3>
+                <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={data}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="time" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
+                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8 }} />
+                        <Legend />
+                        <Line type="monotone" dataKey="battery" stroke="#f97316" strokeWidth={2} dot={false} name="Battery (%)" animationDuration={300} />
+                    </LineChart>
+                </ResponsiveContainer>
+            </div>
+
+            {/* Water Level */}
+            <div style={cardStyle}>
+                <h3 style={headerStyle}>
+                    <span>💧 Water Level</span>
+                </h3>
+                <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={data}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="time" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
+                        <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8 }} />
+                        <Legend />
+                        <Line type="monotone" dataKey="water" stroke="#ec4899" strokeWidth={2} dot={false} name="Water (%)" animationDuration={300} />
+                    </LineChart>
+                </ResponsiveContainer>
+            </div>
+
             {/* Combined Graph */}
             <div style={cardStyle}>
                 <h3 style={headerStyle}>
@@ -210,6 +246,8 @@ const Monitoring = ({ vehicleDetails }) => {
                         <Line type="monotone" dataKey="fuel" stroke="#a855f7" strokeWidth={2} dot={false} name="Fuel" />
                         <Line type="monotone" dataKey="oil" stroke="#7c3aed" strokeWidth={2} dot={false} name="Oil" />
                         <Line type="monotone" dataKey="voltage" stroke="#6366f1" strokeWidth={2} dot={false} name="Voltage" />
+                        <Line type="monotone" dataKey="battery" stroke="#f97316" strokeWidth={2} dot={false} name="Battery" />
+                        <Line type="monotone" dataKey="water" stroke="#ec4899" strokeWidth={2} dot={false} name="Water" />
                     </LineChart>
                 </ResponsiveContainer>
             </div>

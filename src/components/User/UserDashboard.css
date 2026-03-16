@@ -10,6 +10,11 @@
     margin: 0 auto;
 }
 
+/* Spinner for map loading */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* Pulse animation for alert button */
 @keyframes pulse {
 

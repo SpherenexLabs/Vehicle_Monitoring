@@ -1,24 +1,61 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth, db } from '../../firebase';
-import { ref, update } from 'firebase/database';
+import { ref, update, get, set } from 'firebase/database';
 
 const Login = () => {
-    const [email, setEmail] = useState('');
+    const location = useLocation();
+    const prefill = location.state || {};
+    const [email, setEmail] = useState(prefill.email || '');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
+    const [info, setInfo] = useState(prefill.email ? 'Email pre-filled from signup. Enter your password to login.' : '');
+    const [resetSent, setResetSent] = useState(false);
+    const [showForgot, setShowForgot] = useState(false);
     const navigate = useNavigate();
+
+    const handleForgotPassword = async () => {
+        if (!email) {
+            setError('Enter your email address above, then click Forgot Password.');
+            return;
+        }
+        try {
+            await sendPasswordResetEmail(auth, email);
+            setResetSent(true);
+            setError('');
+            setInfo('Password reset email sent to ' + email + '. Check your inbox, reset your password, then login here.');
+        } catch (err) {
+            if (err.code === 'auth/user-not-found') {
+                setError('No account found with this email. Please sign up first.');
+            } else {
+                setError('Could not send reset email. Please try again.');
+            }
+        }
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
+        setInfo('');
 
-        // Check for hardcoded admin credentials
-        if (email === 'admin@gmail.com' && password === 'admin@1234') {
-            navigate('/admin');
-            return;
+        // Check admin credentials stored in Firebase
+        try {
+            const adminsRef = ref(db, 'admins');
+            const adminSnapshot = await get(adminsRef);
+            if (adminSnapshot.exists()) {
+                const admins = adminSnapshot.val();
+                const adminMatch = Object.values(admins).find(
+                    (admin) => admin.email === email && admin.password === password
+                );
+                if (adminMatch) {
+                    navigate('/admin');
+                    return;
+                }
+            }
+        } catch (adminErr) {
+            console.error('Admin check failed:', adminErr);
         }
 
         // Firebase authentication for regular users
@@ -26,16 +63,59 @@ const Login = () => {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // Save timeIn to Firebase
+            // Check if user DB record exists; create it if missing (handles old buggy signups)
             const userRef = ref(db, `users/${user.uid}`);
-            await update(userRef, {
-                timeIn: new Date().toISOString(),
-                timeOut: null // Clear previous timeOut
-            });
+            const snapshot = await get(userRef);
+
+            if (!snapshot.exists()) {
+                // First time login or missing DB record — create full record
+                await set(userRef, {
+                    email: user.email,
+                    uid: user.uid,
+                    userName: prefill.userName || '',
+                    phoneNumber: prefill.phoneNumber || '',
+                    createdAt: new Date().toISOString(),
+                    timeIn: new Date().toISOString(),
+                    timeOut: null,
+                    vehicleDetails: {
+                        userEmail: user.email,
+                        userName: prefill.userName || '',
+                        phoneNumber: prefill.phoneNumber || '',
+                        carName: '',
+                        carNumber: ''
+                    }
+                });
+            } else {
+                // Record exists — only update login time
+                await update(userRef, {
+                    timeIn: new Date().toISOString(),
+                    timeOut: null
+                });
+            }
 
             navigate('/user');
         } catch (err) {
-            setError('Invalid credentials. Please try again.');
+            switch (err.code) {
+                case 'auth/user-not-found':
+                    setError('No account found with this email. Please sign up first.');
+                    break;
+                case 'auth/wrong-password':
+                case 'auth/invalid-credential':
+                    setError('Incorrect password. Please try again.');
+                    setShowForgot(true);
+                    break;
+                case 'auth/invalid-email':
+                    setError('Invalid email address format.');
+                    break;
+                case 'auth/too-many-requests':
+                    setError('Too many failed attempts. Account temporarily locked. Try again later.');
+                    break;
+                case 'auth/network-request-failed':
+                    setError('Network error. Please check your internet connection.');
+                    break;
+                default:
+                    setError('Login failed. Please check your credentials and try again.');
+            }
         }
     };
 
@@ -49,10 +129,30 @@ const Login = () => {
                     <p style={{ color: '#64748b', fontSize: 'clamp(0.875rem, 2vw, 0.95rem)' }}>Welcome back! Please login to continue</p>
                 </div>
 
+                {info && (
+                    <div style={{ background: '#eff6ff', color: '#1d4ed8', padding: '14px 16px', borderRadius: 12, marginBottom: 24, fontSize: '0.9rem', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span>ℹ️</span><span>{info}</span>
+                    </div>
+                )}
+
                 {error && (
-                    <div style={{ background: '#fef2f2', color: '#991b1b', padding: '14px 16px', borderRadius: 12, marginBottom: 24, fontSize: '0.9rem', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#ef4444', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>!</div>
-                        <span>{error}</span>
+                    <div style={{ background: '#fef2f2', color: '#991b1b', padding: '14px 16px', borderRadius: 12, marginBottom: 24, fontSize: '0.9rem', border: '1px solid #fecaca' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: showForgot ? 10 : 0 }}>
+                            <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#ef4444', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>!</div>
+                            <span>{error}</span>
+                        </div>
+                        {showForgot && !resetSent && (
+                            <button
+                                type="button"
+                                onClick={handleForgotPassword}
+                                style={{ marginTop: 4, background: '#ef4444', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
+                            >
+                                Send Password Reset Email
+                            </button>
+                        )}
+                        {resetSent && (
+                            <span style={{ color: '#15803d', fontWeight: 600, fontSize: '0.85rem', display: 'block', marginTop: 6 }}>✓ Reset email sent! Check your inbox.</span>
+                        )}
                     </div>
                 )}
 
@@ -186,7 +286,17 @@ const Login = () => {
                     </button>
                 </form>
 
-                <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
+                <div style={{ textAlign: 'center', marginTop: 16 }}>
+                    <button
+                        type="button"
+                        onClick={handleForgotPassword}
+                        style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline', padding: 0 }}
+                    >
+                        {resetSent ? '✓ Reset email sent' : 'Forgot Password?'}
+                    </button>
+                </div>
+
+                <div style={{ textAlign: 'center', marginTop: 16, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
                     <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>
                         Don't have an account?{' '}
                         <button

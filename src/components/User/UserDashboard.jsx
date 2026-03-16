@@ -28,6 +28,24 @@ const UserDashboard = () => {
     const [showScheduleModal, setShowScheduleModal] = useState(false);
     const [selectedService, setSelectedService] = useState(null);
     const [scheduleForm, setScheduleForm] = useState({ date: '', time: '', notes: '' });
+    const [userLocation, setUserLocation] = useState(null);
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        if (!navigator.geolocation) return;
+        const watchId = navigator.geolocation.watchPosition(
+            (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => {},
+            { enableHighAccuracy: true, maximumAge: 10000 }
+        );
+        return () => navigator.geolocation.clearWatch(watchId);
+    }, []);
 
     useEffect(() => {
         const engineHealthRef = ref(db, 'Engine_Health');
@@ -44,7 +62,8 @@ const UserDashboard = () => {
                         oil: data.Oil || 0,
                         temp: data.Temp || 0,
                         volt: data.Volt || 0,
-                        humidity: data.Humidity || 0,
+                        battery: data.Battery || 0,
+                        humidity: data.Hum || 0,
                         water: data.Water || 0,
                         vibrationX: data.MPU?.X || 0,
                         vibrationY: data.MPU?.Y || 0,
@@ -52,15 +71,6 @@ const UserDashboard = () => {
                     }];
                     // Keep last 20 data points
                     const updatedData = newData.slice(-20);
-                    console.log('Chart Data Updated:', updatedData.length, 'points');
-                    console.log('Latest values:', {
-                        fuel: data.Fuel,
-                        oil: data.Oil,
-                        temp: data.Temp,
-                        volt: data.Volt,
-                        humidity: data.Humidity,
-                        water: data.Water
-                    });
                     return updatedData;
                 });
 
@@ -94,6 +104,18 @@ const UserDashboard = () => {
                     newAlerts.push(`Critical: Low Battery Voltage ${data.Volt}V`);
                 } else if (data.Volt > 14.5) {
                     newAlerts.push(`Warning: High Voltage ${data.Volt}V - Charging Issue`);
+                }
+
+                // Humidity alerts
+                if (data.Hum > 80) {
+                    newAlerts.push(`Warning: High Humidity ${data.Hum}% - Check air filter`);
+                }
+
+                // Battery % alerts
+                if (data.Battery < 20) {
+                    newAlerts.push(`Critical: Low Battery ${data.Battery.toFixed(1)}% - Charge immediately!`);
+                } else if (data.Battery < 50) {
+                    newAlerts.push(`Warning: Battery at ${data.Battery.toFixed(1)}%`);
                 }
 
                 // Vibration alerts
@@ -249,20 +271,29 @@ const UserDashboard = () => {
                 results.push({ system: 'Battery', status: 'OK', message: `Voltage optimal at ${engineHealth.Volt}V`, color: '#10b981' });
             }
 
-            // Coolant/Water
+            // Water Level
             if (engineHealth.Water < 40) {
-                results.push({ system: 'Coolant System', status: 'Critical', message: `Coolant at ${engineHealth.Water}% - Add coolant immediately`, color: '#ef4444' });
+                results.push({ system: 'Water System', status: 'Critical', message: `Water at ${engineHealth.Water}% - Add water immediately`, color: '#ef4444' });
             } else if (engineHealth.Water < 60) {
-                results.push({ system: 'Coolant System', status: 'Warning', message: `Coolant at ${engineHealth.Water}% - Check level`, color: '#f59e0b' });
+                results.push({ system: 'Water System', status: 'Warning', message: `Water at ${engineHealth.Water}% - Check level`, color: '#f59e0b' });
             } else {
-                results.push({ system: 'Coolant System', status: 'OK', message: `Coolant level good at ${engineHealth.Water}%`, color: '#10b981' });
+                results.push({ system: 'Water System', status: 'OK', message: `Water level good at ${engineHealth.Water}%`, color: '#10b981' });
+            }
+
+            // Battery %
+            if (engineHealth.Battery < 20) {
+                results.push({ system: 'Battery Charge', status: 'Critical', message: `Battery at ${engineHealth.Battery?.toFixed(1)}% - Charge immediately`, color: '#ef4444' });
+            } else if (engineHealth.Battery < 50) {
+                results.push({ system: 'Battery Charge', status: 'Warning', message: `Battery at ${engineHealth.Battery?.toFixed(1)}% - Monitor level`, color: '#f59e0b' });
+            } else {
+                results.push({ system: 'Battery Charge', status: 'OK', message: `Battery at ${engineHealth.Battery?.toFixed(1)}%`, color: '#10b981' });
             }
 
             // Humidity/Air Quality
-            if (engineHealth.Humidity > 80) {
-                results.push({ system: 'Air Quality', status: 'Warning', message: `High humidity at ${engineHealth.Humidity}% - Check air filter`, color: '#f59e0b' });
+            if (engineHealth.Hum > 80) {
+                results.push({ system: 'Air Quality', status: 'Warning', message: `High humidity at ${engineHealth.Hum}% - Check air filter`, color: '#f59e0b' });
             } else {
-                results.push({ system: 'Air Quality', status: 'OK', message: `Humidity normal at ${engineHealth.Humidity}%`, color: '#10b981' });
+                results.push({ system: 'Air Quality', status: 'OK', message: `Humidity normal at ${engineHealth.Hum}%`, color: '#10b981' });
             }
 
             // Vibration Check
@@ -317,8 +348,9 @@ Fuel Level: ${engineHealth?.Fuel || 0}%
 Oil Level: ${engineHealth?.Oil || 0}%
 Engine Temperature: ${engineHealth?.Temp || 0}°C
 Battery Voltage: ${engineHealth?.Volt || 0}V
-Coolant Level: ${engineHealth?.Water || 0}%
-Humidity: ${engineHealth?.Humidity || 0}%
+Battery Charge: ${engineHealth?.Battery?.toFixed(1) || 0}%
+Water Level: ${engineHealth?.Water || 0}%
+Humidity: ${engineHealth?.Hum || 0}%
 
 ----------------------------------------
 VIBRATION READINGS
@@ -401,20 +433,22 @@ You will receive a confirmation email shortly.
             minHeight: '100vh',
             background: '#f5f7fa',
             fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-            flexDirection: window.innerWidth < 768 ? 'column' : 'row'
+            flexDirection: windowWidth < 768 ? 'column' : 'row'
         }}>
             {/* Sidebar */}
             <div style={{
-                width: window.innerWidth < 768 ? '100%' : window.innerWidth < 1024 ? '240px' : '280px',
+                width: windowWidth < 768 ? '100%' : windowWidth < 1024 ? '240px' : '280px',
                 background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
-                padding: window.innerWidth < 768 ? '16px' : '32px 24px',
+                padding: windowWidth < 768 ? '16px' : '32px 24px',
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: '4px 0 24px rgba(0,0,0,0.12)',
-                height: window.innerWidth < 768 ? 'auto' : '100vh',
-                overflow: window.innerWidth < 768 ? 'visible' : 'hidden',
-                position: window.innerWidth < 768 ? 'relative' : 'sticky',
-                top: 0
+                height: windowWidth < 768 ? 'auto' : '100vh',
+                overflow: windowWidth < 768 ? 'visible' : 'hidden',
+                position: windowWidth < 768 ? 'relative' : 'fixed',
+                top: 0,
+                left: 0,
+                zIndex: 100
             }}>
                 {/* Logo/Brand */}
                 <div style={{ marginBottom: window.innerWidth < 400 ? '12px' : window.innerWidth < 768 ? '24px' : '48px' }}>
@@ -471,6 +505,47 @@ You will receive a confirmation email shortly.
                         </div>
                     ))}
                 </div>
+
+                {/* Live Location Map */}
+                {window.innerWidth >= 768 && (
+                    <div style={{ marginBottom: '20px', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ background: 'rgba(56,189,248,0.1)', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                📍 Live Location
+                            </span>
+                            {userLocation && (
+                                <span style={{ fontSize: '0.6rem', color: '#94a3b8', marginLeft: 'auto' }}>
+                                    {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
+                                </span>
+                            )}
+                        </div>
+                        {userLocation ? (
+                            <iframe
+                                title="live-map"
+                                width="100%"
+                                height="180"
+                                style={{ display: 'block', border: 'none' }}
+                                src={`https://maps.google.com/maps?q=${userLocation.lat},${userLocation.lng}&z=15&output=embed`}
+                                allowFullScreen
+                            />
+                        ) : (
+                            <div style={{ height: 180, background: 'rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                <div style={{ width: 32, height: 32, border: '3px solid #38bdf8', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                                <span style={{ color: '#64748b', fontSize: '0.75rem' }}>Getting location...</span>
+                            </div>
+                        )}
+                        {userLocation && (
+                            <a
+                                href={`https://www.google.com/maps?q=${userLocation.lat},${userLocation.lng}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ display: 'block', textAlign: 'center', padding: '6px', background: 'rgba(56,189,248,0.08)', color: '#38bdf8', fontSize: '0.72rem', fontWeight: 600, textDecoration: 'none', letterSpacing: '0.3px' }}
+                            >
+                                Open in Google Maps ↗
+                            </a>
+                        )}
+                    </div>
+                )}
 
                 {/* User Profile & Logout */}
                 <div style={{
@@ -530,7 +605,7 @@ You will receive a confirmation email shortly.
             </div>
 
             {/* Main Content */}
-            <div style={{ flex: 1, overflow: 'auto', width: window.innerWidth < 768 ? '100%' : 'auto' }}>
+            <div style={{ flex: 1, overflow: 'auto', width: windowWidth < 768 ? '100%' : 'auto', marginLeft: windowWidth < 768 ? 0 : windowWidth < 1024 ? '240px' : '280px' }}>
                 {/* Top Bar */}
                 <div style={{
                     background: '#fff',
@@ -587,8 +662,11 @@ You will receive a confirmation email shortly.
                                 fontFamily: 'monospace',
                                 lineHeight: 1.4
                             }}>
-                                Lat: 12.9716°N<br />
-                                Lng: 77.5946°E
+                                {userLocation ? (
+                                    <>Lat: {userLocation.lat.toFixed(4)}°<br />Lng: {userLocation.lng.toFixed(4)}°</>
+                                ) : (
+                                    'Getting location...'
+                                )}
                             </div>
                         </div>
                     </div>
@@ -948,12 +1026,13 @@ You will receive a confirmation email shortly.
                                 marginBottom: window.innerWidth < 768 ? '20px' : '32px'
                             }}>
                                 {[
-                                    { label: 'Avg Fuel', value: `${chartData.length > 0 ? Math.round(chartData.reduce((acc, d) => acc + d.fuel, 0) / chartData.length) : 0}%`, color: '#3b82f6' },
-                                    { label: 'Avg Oil', value: `${chartData.length > 0 ? Math.round(chartData.reduce((acc, d) => acc + d.oil, 0) / chartData.length) : 0}%`, color: '#8b5cf6' },
-                                    { label: 'Avg Temp', value: `${chartData.length > 0 ? Math.round(chartData.reduce((acc, d) => acc + d.temp, 0) / chartData.length) : 0}°C`, color: '#f59e0b' },
-                                    { label: 'Battery', value: `${chartData.length > 0 ? (chartData.reduce((acc, d) => acc + d.volt, 0) / chartData.length).toFixed(1) : 0}V`, color: '#10b981' },
-                                    { label: 'Humidity', value: `${chartData.length > 0 ? Math.round(chartData.reduce((acc, d) => acc + d.humidity, 0) / chartData.length) : 0}%`, color: '#06b6d4' },
-                                    { label: 'Coolant', value: `${chartData.length > 0 ? Math.round(chartData.reduce((acc, d) => acc + d.water, 0) / chartData.length) : 0}%`, color: '#ec4899' }
+                                    { label: 'Fuel', value: `${engineHealth ? Math.round(engineHealth.Fuel || 0) : 0}%`, color: '#3b82f6' },
+                                    { label: 'Oil', value: `${engineHealth ? Math.round(engineHealth.Oil || 0) : 0}%`, color: '#8b5cf6' },
+                                    { label: 'Temp', value: `${engineHealth ? (engineHealth.Temp || 0).toFixed(1) : 0}°C`, color: '#f59e0b' },
+                                    { label: 'Voltage', value: `${engineHealth ? (engineHealth.Volt || 0).toFixed(1) : 0}V`, color: '#10b981' },
+                                    { label: 'Battery', value: `${engineHealth ? (engineHealth.Battery || 0).toFixed(1) : 0}%`, color: '#f97316' },
+                                    { label: 'Humidity', value: `${engineHealth ? Math.round(engineHealth.Hum || 0) : 0}%`, color: '#06b6d4' },
+                                    { label: 'Water', value: `${engineHealth ? Math.round(engineHealth.Water || 0) : 0}%`, color: '#ec4899' }
                                 ].map((stat, i) => (
                                     <div key={i} style={{
                                         background: '#fff',
@@ -1172,6 +1251,55 @@ You will receive a confirmation email shortly.
                                         </div>
                                     </div>
 
+                                    {/* Battery % Card */}
+                                    <div style={{
+                                        background: '#fff',
+                                        borderRadius: 16,
+                                        padding: '24px',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                                        border: '1px solid #e2e8f0',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            height: '4px',
+                                            background: 'linear-gradient(90deg, #f97316, #fb923c)'
+                                        }} />
+                                        <div style={{
+                                            fontSize: '0.875rem',
+                                            color: '#64748b',
+                                            fontWeight: 600,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px',
+                                            marginBottom: '12px'
+                                        }}>
+                                            Battery Charge
+                                        </div>
+                                        <div style={{
+                                            fontSize: '2.5rem',
+                                            fontWeight: 700,
+                                            color: '#0f172a',
+                                            marginBottom: '8px'
+                                        }}>
+                                            {engineHealth?.Battery?.toFixed(1) || 0}<span style={{ fontSize: '1.5rem', color: '#64748b' }}>%</span>
+                                        </div>
+                                        <div style={{
+                                            display: 'inline-block',
+                                            padding: '6px 12px',
+                                            background: engineHealth?.Battery < 20 ? '#fee2e2' : engineHealth?.Battery < 50 ? '#fef3c7' : '#dcfce7',
+                                            color: engineHealth?.Battery < 20 ? '#dc2626' : engineHealth?.Battery < 50 ? '#f59e0b' : '#16a34a',
+                                            borderRadius: 8,
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600
+                                        }}>
+                                            {engineHealth?.Battery < 20 ? 'Critical' : engineHealth?.Battery < 50 ? 'Low' : 'Good'}
+                                        </div>
+                                    </div>
+
                                     {/* Humidity Card */}
                                     <div style={{
                                         background: '#fff',
@@ -1206,18 +1334,18 @@ You will receive a confirmation email shortly.
                                             color: '#0f172a',
                                             marginBottom: '8px'
                                         }}>
-                                            {engineHealth?.Humidity || 0}<span style={{ fontSize: '1.5rem', color: '#64748b' }}>%</span>
+                                            {engineHealth?.Hum || 0}<span style={{ fontSize: '1.5rem', color: '#64748b' }}>%</span>
                                         </div>
                                         <div style={{
                                             display: 'inline-block',
                                             padding: '6px 12px',
-                                            background: (engineHealth?.Humidity < 20 || engineHealth?.Humidity > 80) ? '#fef3c7' : '#dcfce7',
-                                            color: (engineHealth?.Humidity < 20 || engineHealth?.Humidity > 80) ? '#f59e0b' : '#16a34a',
+                                            background: (engineHealth?.Hum < 20 || engineHealth?.Hum > 80) ? '#fef3c7' : '#dcfce7',
+                                            color: (engineHealth?.Hum < 20 || engineHealth?.Hum > 80) ? '#f59e0b' : '#16a34a',
                                             borderRadius: 8,
                                             fontSize: '0.8rem',
                                             fontWeight: 600
                                         }}>
-                                            {engineHealth?.Humidity < 20 ? 'Low' : engineHealth?.Humidity > 80 ? 'High' : 'Normal'}
+                                            {engineHealth?.Hum < 20 ? 'Low' : engineHealth?.Hum > 80 ? 'High' : 'Normal'}
                                         </div>
                                     </div>
 
@@ -1247,7 +1375,7 @@ You will receive a confirmation email shortly.
                                             letterSpacing: '0.5px',
                                             marginBottom: '12px'
                                         }}>
-                                            Coolant
+                                            Water
                                         </div>
                                         <div style={{
                                             fontSize: '2.5rem',
@@ -1569,7 +1697,7 @@ You will receive a confirmation email shortly.
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: window.innerWidth < 400 ? '4px' : '8px' }}>
                                             <div style={{ width: window.innerWidth < 400 ? '8px' : '12px', height: window.innerWidth < 400 ? '8px' : '12px', borderRadius: '50%', background: '#ec4899' }} />
-                                            <span style={{ fontSize: window.innerWidth < 400 ? '0.625rem' : window.innerWidth < 768 ? '0.75rem' : '0.875rem', color: '#64748b', fontWeight: 500 }}>Coolant (%)</span>
+                                            <span style={{ fontSize: window.innerWidth < 400 ? '0.625rem' : window.innerWidth < 768 ? '0.75rem' : '0.875rem', color: '#64748b', fontWeight: 500 }}>Water (%)</span>
                                         </div>
                                     </div>
 
@@ -1677,7 +1805,7 @@ You will receive a confirmation email shortly.
                                                 dataKey="water"
                                                 stroke="#ec4899"
                                                 strokeWidth={window.innerWidth < 400 ? 2 : 3}
-                                                name="Coolant (%)"
+                                                name="Water (%)"
                                                 dot={{ fill: '#ec4899', r: window.innerWidth < 400 ? 3 : 4 }}
                                                 activeDot={{ r: window.innerWidth < 400 ? 4 : 6 }}
                                             />
@@ -1935,7 +2063,7 @@ You will receive a confirmation email shortly.
                                     </div>
                                 </div>
 
-                                {/* Coolant Chart */}
+                                {/* Water Chart */}
                                 <div style={{
                                     background: '#fff',
                                     borderRadius: 16,
@@ -1949,7 +2077,7 @@ You will receive a confirmation email shortly.
                                         color: '#0f172a',
                                         marginBottom: '12px'
                                     }}>
-                                        Coolant Level
+                                        Water Level
                                     </h4>
                                     <ResponsiveContainer width="100%" height={150}>
                                         <LineChart data={chartData}>
@@ -1973,9 +2101,9 @@ You will receive a confirmation email shortly.
                                             fontWeight: 600,
                                             lineHeight: '1.4'
                                         }}>
-                                            {engineHealth?.Water < 40 ? 'Critical: Add coolant immediately - Risk of overheating' :
-                                                engineHealth?.Water < 60 ? 'Warning: Coolant level low - Top up soon' :
-                                                    'Good: Coolant level is adequate'}
+                                            {engineHealth?.Water < 40 ? 'Critical: Add water immediately - Risk of overheating' :
+                                                engineHealth?.Water < 60 ? 'Warning: Water level low - Top up soon' :
+                                                    'Good: Water level is adequate'}
                                         </div>
                                     </div>
                                 </div>
@@ -2004,10 +2132,10 @@ You will receive a confirmation email shortly.
                                 marginBottom: '32px'
                             }}>
                                 {[
-                                    { label: 'Avg Fuel', value: `${chartData.length > 0 ? Math.round(chartData.reduce((acc, d) => acc + d.fuel, 0) / chartData.length) : 0}%`, color: '#3b82f6' },
-                                    { label: 'Avg Oil', value: `${chartData.length > 0 ? Math.round(chartData.reduce((acc, d) => acc + d.oil, 0) / chartData.length) : 0}%`, color: '#8b5cf6' },
-                                    { label: 'Avg Temp', value: `${chartData.length > 0 ? Math.round(chartData.reduce((acc, d) => acc + d.temp, 0) / chartData.length) : 0}°C`, color: '#f59e0b' },
-                                    { label: 'Avg Voltage', value: `${chartData.length > 0 ? (chartData.reduce((acc, d) => acc + d.volt, 0) / chartData.length).toFixed(1) : 0}V`, color: '#10b981' }
+                                    { label: 'Fuel', value: `${engineHealth ? Math.round(engineHealth.Fuel || 0) : 0}%`, color: '#3b82f6' },
+                                    { label: 'Oil', value: `${engineHealth ? Math.round(engineHealth.Oil || 0) : 0}%`, color: '#8b5cf6' },
+                                    { label: 'Temp', value: `${engineHealth ? (engineHealth.Temp || 0).toFixed(1) : 0}°C`, color: '#f59e0b' },
+                                    { label: 'Voltage', value: `${engineHealth ? (engineHealth.Volt || 0).toFixed(1) : 0}V`, color: '#10b981' }
                                 ].map((stat, i) => (
                                     <div key={i} style={{
                                         background: '#fff',
@@ -2332,7 +2460,7 @@ You will receive a confirmation email shortly.
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     {[
                                         { service: 'Oil Change', due: engineHealth?.Oil < 30 ? 'URGENT' : 'Soon', priority: engineHealth?.Oil < 30 ? 'high' : 'medium' },
-                                        { service: 'Coolant Check', due: engineHealth?.Water < 40 ? 'URGENT' : 'Normal', priority: engineHealth?.Water < 40 ? 'high' : 'low' },
+                                        { service: 'Water Check', due: engineHealth?.Water < 40 ? 'URGENT' : 'Normal', priority: engineHealth?.Water < 40 ? 'high' : 'low' },
                                         { service: 'Battery Test', due: engineHealth?.Volt < 12 ? 'URGENT' : 'Scheduled', priority: engineHealth?.Volt < 12 ? 'high' : 'low' },
                                         { service: 'General Inspection', due: 'Monthly', priority: 'low' }
                                     ].map((item, i) => (
